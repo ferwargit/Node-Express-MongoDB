@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
-import routesMascotas from './routes/mascotas.routes.js'; // Importar las rutas de mascotas
+import routesMascotas from './routes/mascotas.routes.js';
+import routesUsuarios from './routes/usuarios.routes.js'; 
 import bodyParser from 'body-parser';
 import dbClient from './config/dbClient.js';
 
@@ -9,8 +10,8 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Usar las rutas de mascotas
-app.use('/mascotas', routesMascotas); // Montar el enrutador en la ruta '/mascotas'
+app.use('/pets', routesMascotas);
+app.use('/users', routesUsuarios); 
 
 try {
     const PORT = process.env.PORT || 3000;
