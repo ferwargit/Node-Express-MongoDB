@@ -1,20 +1,24 @@
 import 'dotenv/config';
-import { MongoClient } from "mongodb";
+import mongoose from 'mongoose';
 
 class dbClient {
+
     constructor() {
-        const queryString = `mongodb+srv://${process.env.USER_DB}:${process.env.PASS_DB}@${process.env.SERVER_DB}/?retryWrites=true&w=majority&appName=Cluster0`;
-        this.client = new MongoClient(queryString);
-        this.conectarBD();
+        this.conectarBaseDatos();
     }
 
-    async conectarBD() {
+    async conectarBaseDatos() {
+        const queryString = `mongodb+srv://${process.env.USER_DB}:${process.env.PASS_DB}@${process.env.SERVER_DB}/?retryWrites=true&w=majority&appName=Cluster0`;
+        await mongoose.connect(queryString);
+        console.log("Base de datos conectada con éxito");
+    }
+
+    async cerrarConexion() {
         try {
-            await this.client.connect(); // Conectar al cliente
-            this.db = this.client.db('adopcion'); // Obtener la base de datos
-            console.log("Base de datos conectada con éxito");
+            await mongoose.disconnect(); // Cerrar cnexion
+            console.log("Conexión a la base de datos cerrada");
         } catch (e) {
-            console.error("Error al conectar a la base de datos:", e); // Mejor manejo de errores
+            console.error("Error al cerrar la base de datos:", e); // Mejor manejo de errores
         }
     }
 
