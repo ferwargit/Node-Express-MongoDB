@@ -8,6 +8,16 @@ class mascotasModel {
         return await colMascotas.insertOne(mascota);
     }
 
+    async update(id, mascota) {
+        const colMascotas = dbClient.db.collection("mascotas");
+        return await colMascotas.updateOne({ _id: new ObjectId(id) }, { $set: mascota });
+    }
+
+    async delete(id) {
+        const colMascotas = dbClient.db.collection("mascotas");
+        return await colMascotas.deleteOne({ _id: new ObjectId(id) });
+    }
+
     async getAll() {
         const colMascotas = dbClient.db.collection("mascotas");
         return await colMascotas.find({}).toArray();
@@ -15,7 +25,7 @@ class mascotasModel {
 
     async getOne(id) {
         const colMascotas = dbClient.db.collection("mascotas");
-        return await colMascotas.findOne({_id: new ObjectId(id) });
+        return await colMascotas.findOne({ _id: new ObjectId(id) });
     }
 
 }
