@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import routesMascotas from './routes/mascotas.routes.js'; // Importar las rutas de mascotas
+import bodyParser from 'body-parser';
 
 const app = express();
 
