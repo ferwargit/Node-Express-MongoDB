@@ -4,6 +4,9 @@ import routesMascotas from './routes/mascotas.routes.js'; // Importar las rutas 
 
 const app = express();
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 // Usar las rutas de mascotas
 app.use('/mascotas', routesMascotas); // Montar el enrutador en la ruta '/mascotas'
 
