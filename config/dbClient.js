@@ -8,7 +8,7 @@ class dbClient {
     }
 
     async conectarBaseDatos() {
-        const queryString = `mongodb+srv://${process.env.USER_DB}:${process.env.PASS_DB}@${process.env.SERVER_DB}/?retryWrites=true&w=majority&appName=Cluster0`;
+        const queryString = `mongodb+srv://${process.env.USER_DB}:${process.env.PASS_DB}@${process.env.SERVER_DB}/adopcion?retryWrites=true&w=majority`;
         await mongoose.connect(queryString);
         console.log("Base de datos conectada con éxito");
     }
