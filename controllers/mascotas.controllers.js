@@ -8,7 +8,7 @@ class mascotasController {
     async create(req, res) {
         try {
             // Lógica para crear una nueva mascota
-            const data = mascotasModel.create(req.body);
+            const data = await mascotasModel.create(req.body);
             res.status(201).json(data);
         } catch (e) {
             res.status(500).send(e); // Manejo de errores
