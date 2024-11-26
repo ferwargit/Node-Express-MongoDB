@@ -35,8 +35,9 @@ class mascotasController {
 
     async getAll(req, res) {
         try {
-            // Lógica para obtener todas las mascotas (aún no implementada)
-            res.status(201).json({ status: 'getAll-ok' }); // Respuesta de éxito
+            // Lógica para obtener todas las mascotas
+            const data = await mascotasModel.getAll();
+            res.status(201).json(data); // Respuesta de éxito
         } catch (e) {
             res.status(500).send(e); // Manejo de errores
         }
@@ -44,8 +45,10 @@ class mascotasController {
 
     async getOne(req, res) {
         try {
-            // Lógica para obtener una mascota por ID (aún no implementada)
-            res.status(201).json({ status: 'getOne-ok' }); // Respuesta de éxito
+            // Lógica para obtener una mascota por ID
+            const {id} = req.params;
+            const data = await mascotasModel.getOne(id);
+            res.status(201).json(data); // Respuesta de éxito
         } catch (e) {
             res.status(500).send(e); // Manejo de errores
         }
