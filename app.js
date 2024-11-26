@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import routesMascotas from './routes/mascotas.routes.js'; // Importar las rutas de mascotas
 import bodyParser from 'body-parser';
+import dbClient from './config/dbClient.js';
 
 const app = express();
 
@@ -17,3 +18,8 @@ try {
 } catch (e) {
     console.log(e);
 }
+
+process.on('SIGINT', async() => {
+    dbClient.cerrarConexion();
+    process.exit(0);
+});
