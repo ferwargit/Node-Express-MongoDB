@@ -1,3 +1,5 @@
+import mascotasModel from "../models/mascotas.models.js";
+
 class mascotasController {
     constructor() {
         // Constructor vacío por ahora
@@ -5,8 +7,9 @@ class mascotasController {
 
     async create(req, res) {
         try {
-            // Lógica para crear una nueva mascota (aún no implementada)
-            res.status(201).json({ status: 'create-ok' }); // Respuesta de éxito
+            // Lógica para crear una nueva mascota
+            const data = mascotasModel.create(req.body);
+            res.status(201).json(data);
         } catch (e) {
             res.status(500).send(e); // Manejo de errores
         }
