@@ -1,3 +1,4 @@
+import { generarToken } from '../helpers/autenticacion.js';
 import usuariosModel from "../models/usuarios.models.js";
 import bcrypt from "bcrypt";
 
@@ -45,10 +46,13 @@ class usuariosController {
                 return res.status(400).json({ error: "Clave NO válida." });
             }
 
-            return res.status(200).json({ msg: 'Usuario autenticado' });
+            const token = generarToken(email);
+
+            return res.status(200).json({ msg: 'Usuario autenticado', token });
 
         } catch (e) {
-            
+            console.log(e);
+            res.status(500).send(e); // Manejo de errores
         }
     }
 }
