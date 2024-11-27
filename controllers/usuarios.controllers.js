@@ -55,6 +55,17 @@ class usuariosController {
             res.status(500).send(e); // Manejo de errores
         }
     }
+
+    async profile(req, res) {
+        try {
+            // Lógica para obtener un usuario por email
+            // console.log(req.emailConectado);
+            const data = await usuariosModel.getOne({ email: req.emailConectado });
+            res.status(200).json(data); // Respuesta de éxito
+        } catch (e) {
+            res.status(500).send(e); // Manejo de errores
+        }
+    }
 }
 
 export default new usuariosController();
