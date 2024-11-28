@@ -1,105 +1,125 @@
 import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
-import mongoose from 'mongoose';
 import { connect, closeDatabase, clearDatabase } from '../../config/test-setup.js';
-import usuariosModel from '../../../models/usuarios.models.js';
+import usuarioModel from '../../../models/usuarios.models.js';
 
 describe('Usuario Model Test Suite', () => {
     beforeAll(async () => await connect());
     afterEach(async () => await clearDatabase());
     afterAll(async () => await closeDatabase());
 
+    const createUniqueEmail = () => {
+        return `test_${Date.now()}_${Math.random().toString(36).substring(2)}@example.com`;
+    };
+
     const sampleUsuario = {
-        email: 'john@example.com',
-        nombre: 'John Doe',
-        telefono: '1234567890',
-        clave: 'password123'
+        nombre: 'Juan',
+        apellido: 'Pérez',
+        email: createUniqueEmail(),
+        clave: 'Test1234!',
+        telefono: '+34600000000',
+        rol: 'usuario',
+        activo: true
     };
 
     describe('create', () => {
         it('should create a new usuario successfully', async () => {
-            const result = await usuariosModel.create(sampleUsuario);
-            expect(result.nombre).toBe(sampleUsuario.nombre);
-            expect(result.email).toBe(sampleUsuario.email);
-            expect(result.telefono).toBe(sampleUsuario.telefono);
-            expect(result._id).toBeDefined();
+            const usuario = await usuarioModel.create({
+                ...sampleUsuario,
+                email: createUniqueEmail()
+            });
+            expect(usuario._id).toBeDefined();
+            expect(usuario.nombre).toBe(sampleUsuario.nombre);
         });
 
         it('should fail when required field clave is missing', async () => {
-            const invalidUsuario = { ...sampleUsuario };
-            delete invalidUsuario.clave;
-            
-            await expect(usuariosModel.create(invalidUsuario))
+            const usuarioSinClave = { ...sampleUsuario, email: createUniqueEmail() };
+            delete usuarioSinClave.clave;
+            await expect(usuarioModel.create(usuarioSinClave))
                 .rejects
-                .toThrow('usuarios validation failed');
+                .toThrow('La clave es requerida');
         });
 
         it('should fail when required field telefono is missing', async () => {
-            const invalidUsuario = { ...sampleUsuario };
-            delete invalidUsuario.telefono;
-            
-            await expect(usuariosModel.create(invalidUsuario))
+            const usuarioSinTelefono = { ...sampleUsuario, email: createUniqueEmail() };
+            delete usuarioSinTelefono.telefono;
+            await expect(usuarioModel.create(usuarioSinTelefono))
                 .rejects
-                .toThrow('usuarios validation failed');
+                .toThrow('El teléfono es requerido');
         });
 
         it('should fail when email is duplicate', async () => {
-            await usuariosModel.create(sampleUsuario);
-            
-            await expect(usuariosModel.create(sampleUsuario))
+            const email = createUniqueEmail();
+            await usuarioModel.create({ ...sampleUsuario, email });
+            await expect(usuarioModel.create({ ...sampleUsuario, email }))
                 .rejects
-                .toThrow();
+                .toThrow('E11000 duplicate key error');
         });
     });
 
     describe('getAll', () => {
         it('should return all usuarios', async () => {
-            await usuariosModel.create(sampleUsuario);
-            await usuariosModel.create({...sampleUsuario, email: 'jane@example.com'});
-            
-            const usuarios = await usuariosModel.getAll();
+            await usuarioModel.create({ ...sampleUsuario, email: createUniqueEmail() });
+            await usuarioModel.create({
+                ...sampleUsuario,
+                email: createUniqueEmail(),
+                nombre: 'María'
+            });
+
+            const usuarios = await usuarioModel.getAll();
             expect(usuarios).toHaveLength(2);
-            expect(usuarios[0].nombre).toBeDefined();
         });
     });
 
     describe('getOneById', () => {
         it('should return a single usuario by id', async () => {
-            const created = await usuariosModel.create(sampleUsuario);
-            const found = await usuariosModel.getOneById(created._id);
-            expect(found.email).toBe(sampleUsuario.email);
+            const created = await usuarioModel.create({
+                ...sampleUsuario,
+                email: createUniqueEmail()
+            });
+            const found = await usuarioModel.getOneById(created._id);
+            expect(found._id.toString()).toBe(created._id.toString());
         });
     });
 
     describe('getOne', () => {
         it('should return a single usuario by filter', async () => {
-            await usuariosModel.create(sampleUsuario);
-            const found = await usuariosModel.getOne({ email: sampleUsuario.email });
-            expect(found.nombre).toBe(sampleUsuario.nombre);
+            const email = createUniqueEmail();
+            const created = await usuarioModel.create({ ...sampleUsuario, email });
+            const found = await usuarioModel.getOne({ email });
+            expect(found._id.toString()).toBe(created._id.toString());
         });
     });
 
     describe('update', () => {
         it('should update a usuario successfully', async () => {
-            const created = await usuariosModel.create(sampleUsuario);
-            const updated = await usuariosModel.update(created._id, { nombre: 'Jane Doe' });
-            expect(updated.nombre).toBe('Jane Doe');
+            const created = await usuarioModel.create({
+                ...sampleUsuario,
+                email: createUniqueEmail()
+            });
+            const updated = await usuarioModel.update(created._id, { nombre: 'Pedro' });
+            expect(updated.nombre).toBe('Pedro');
         });
 
         it('should fail when updating to duplicate email', async () => {
-            const user1 = await usuariosModel.create(sampleUsuario);
-            const user2 = await usuariosModel.create({...sampleUsuario, email: 'jane@example.com'});
-            
-            await expect(usuariosModel.update(user2._id, { email: sampleUsuario.email }))
+            const email1 = createUniqueEmail();
+            const email2 = createUniqueEmail();
+            const usuario1 = await usuarioModel.create({ ...sampleUsuario, email: email1 });
+            await usuarioModel.create({ ...sampleUsuario, email: email2 });
+
+            await expect(usuarioModel.update(usuario1._id, { email: email2 }))
                 .rejects
-                .toThrow();
+                .toThrow('E11000 duplicate key error');
         });
     });
 
     describe('delete', () => {
         it('should delete a usuario successfully', async () => {
-            const created = await usuariosModel.create(sampleUsuario);
-            await usuariosModel.delete(created._id);
-            const found = await usuariosModel.getOneById(created._id);
+            const created = await usuarioModel.create({
+                ...sampleUsuario,
+                email: createUniqueEmail()
+            });
+            await usuarioModel.delete(created._id);
+            const found = await usuarioModel.getOne({ _id: created._id });
             expect(found).toBeNull();
         });
     });

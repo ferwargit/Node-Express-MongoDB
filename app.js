@@ -7,20 +7,37 @@ import dbClient from './config/dbClient.js';
 
 const app = express();
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Configurar middleware
+try {
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+} catch (error) {
+    console.log(error);
+}
 
-app.use('/pets', routesMascotas);
-app.use('/users', routesUsuarios); 
+// Configurar rutas
+try {
+    app.use('/pets', routesMascotas);
+    app.use('/users', routesUsuarios);
+} catch (error) {
+    console.log(error);
+}
 
+// Iniciar servidor
 try {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log('Servidor activo en el puerto: ' + PORT));
-} catch (e) {
-    console.log(e);
+} catch (error) {
+    console.log(error);
 }
 
-process.on('SIGINT', async() => {
-    dbClient.cerrarConexion();
-    process.exit(0);
+// Manejo de señales del sistema
+process.on('SIGINT', async () => {
+    try {
+        await dbClient.cerrarConexion();
+        process.exit(0);
+    } catch (error) {
+        console.log(error);
+        process.exit(1);
+    }
 });
