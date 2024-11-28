@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 import { connect, closeDatabase, clearDatabase } from '../../config/test-setup.js';
 import Usuario from '../../../schemas/usuarios.schemas.js';
