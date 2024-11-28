@@ -8,7 +8,14 @@ class mascotaModel {
     }
 
     async update(id, mascota) {
-        return await Mascota.findOneAndUpdate({ _id: new mongoose.Types.ObjectId(id) }, mascota, { new: true });
+        return await Mascota.findOneAndUpdate(
+            { _id: new mongoose.Types.ObjectId(id) },
+            mascota,
+            { 
+                new: true,
+                runValidators: true
+            }
+        );
     }
 
     async delete(id) {
@@ -22,7 +29,6 @@ class mascotaModel {
     async getOne(id) {
         return await Mascota.findById(id);
     }
-
 }
 
 export default new mascotaModel();
