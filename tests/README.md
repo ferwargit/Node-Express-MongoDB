@@ -1,95 +1,142 @@
-# Tests Unitarios para Node-Express-MongoDB
+# Documentación Suite de Pruebas
 
-Este directorio contiene los tests unitarios para la aplicación Node-Express-MongoDB. Los tests están organizados por categorías y utilizan Vitest como framework de testing.
+## Descripción General
+Esta suite de pruebas proporciona una cobertura completa para nuestra aplicación Node.js Express MongoDB. Incluye tanto pruebas unitarias como de integración, asegurando la fiabilidad y corrección de nuestros endpoints API, operaciones de base de datos y mecanismos de autenticación.
 
-## Estructura de Directorios
-
+## Estructura de las Pruebas
 ```
 tests/
-├── config/                 # Configuración para los tests
-├── unit/                  # Tests unitarios
-│   ├── controllers/       # Tests para los controladores
-│   ├── models/           # Tests para los modelos
-│   └── schemas/          # Tests para los schemas
-└── README.md             # Esta documentación
+├── config/               # Archivos de configuración de pruebas
+├── integration/         # Pruebas de integración
+└── unit/               # Pruebas unitarias
+    ├── config/         # Pruebas de configuración
+    │   └── dbClient.test.js
+    ├── controllers/    # Pruebas de controladores
+    │   ├── mascotas.controller.test.js
+    │   └── usuarios.controller.test.js
+    ├── helpers/        # Pruebas de funciones auxiliares
+    │   └── autenticacion.test.js
+    ├── models/         # Pruebas de modelos
+    │   ├── mascotas.model.test.js
+    │   └── usuarios.model.test.js
+    ├── routes/         # Pruebas de rutas
+    │   ├── mascotas.routes.test.js
+    │   └── usuarios.routes.test.js
+    └── schemas/        # Pruebas de validación de esquemas
+        ├── mascotas.schemas.test.js
+        └── usuarios.schemas.test.js
 ```
 
-## Tecnologías Utilizadas
+## Cobertura de Pruebas
 
-- **Vitest**: Framework principal de testing
-- **MongoDB Memory Server**: Base de datos en memoria para tests
-- **Node.js**: Runtime de JavaScript
-- **ES Modules**: Sistema de módulos nativo de JavaScript
+### Pruebas Unitarias
 
-## Ejecución de Tests
+#### Pruebas de Configuración
+- **dbClient.test.js**: Pruebas de funcionalidad de conexión y desconexión de base de datos
+  - Establecimiento de conexión
+  - Manejo de errores durante la conexión
+  - Desconexión apropiada
+  - Formación de cadena de conexión
 
-Para ejecutar los tests, puedes usar los siguientes comandos:
+#### Pruebas de Controladores
+- **mascotas.controller.test.js**: Pruebas del controlador de gestión de mascotas
+  - Operaciones CRUD para mascotas
+  - Manejo de errores
+  - Validación de datos
+  
+- **usuarios.controller.test.js**: Pruebas del controlador de gestión de usuarios
+  - Registro y autenticación de usuarios
+  - Gestión de perfiles
+  - Escenarios de error
 
+#### Pruebas de Helpers
+- **autenticacion.test.js**: Pruebas de autenticación
+  - Generación de tokens JWT
+  - Verificación de tokens
+  - Middleware de autorización
+  - Manejo de tokens inválidos
+
+#### Pruebas de Modelos
+- **mascotas.model.test.js**: Pruebas del modelo de mascotas
+  - Validación de esquema
+  - Campos requeridos
+  - Relaciones de datos
+  
+- **usuarios.model.test.js**: Pruebas del modelo de usuarios
+  - Hash de contraseñas
+  - Validación de datos de usuario
+  - Gestión de información de perfil
+
+#### Pruebas de Rutas
+- **mascotas.routes.test.js**: Pruebas de rutas de mascotas
+  - Configuraciones de rutas
+  - Cadena de middleware
+  - Integración con controladores
+  
+- **usuarios.routes.test.js**: Pruebas de rutas de usuarios
+  - Rutas de autenticación
+  - Rutas protegidas
+  - Validación de solicitudes
+
+#### Pruebas de Esquemas
+- **mascotas.schemas.test.js**: Pruebas de validación del esquema de mascotas
+  - Validación de entrada
+  - Campos requeridos
+  - Verificación de tipos de datos
+  
+- **usuarios.schemas.test.js**: Pruebas de validación del esquema de usuarios
+  - Validación de entrada de usuario
+  - Requisitos de contraseña
+  - Validación de formato de email
+
+## Ejecución de Pruebas
+
+### Todas las Pruebas
 ```bash
-# Ejecutar todos los tests una vez
 npm test
-
-# Ejecutar tests en modo watch (útil durante desarrollo)
-npm run test:watch
-
-# Ejecutar tests con cobertura
-npm run test:coverage
 ```
 
-## Cobertura de Tests
+### Archivo Específico
+```bash
+npm test tests/unit/[ruta-al-archivo-de-prueba]
+```
 
-Los tests cubren las siguientes áreas:
+### Modo Watch
+```bash
+npm run test:watch
+```
 
-- **Controllers**: Lógica de negocio y manejo de requests/responses
-- **Models**: Operaciones de base de datos y lógica de modelos
-- **Schemas**: Validación de datos y estructura de documentos
-
-Actualmente tenemos:
-- 55 tests en total
-- 6 suites de test
-- 100% de cobertura en modelos y schemas
-- Pruebas exhaustivas de validación y manejo de errores
-
-## Convenciones de Testing
-
-1. **Nombrado de archivos**: Los archivos de test deben terminar en `.test.js`
-2. **Estructura de tests**:
-   ```javascript
-   describe('Módulo', () => {
-     beforeEach(() => {
-       // Setup
-     });
-
-     it('should do something', () => {
-       // Test
-     });
-   });
-   ```
-3. **Mocking**: Utilizamos las funciones de mock de Vitest para aislar componentes
-4. **Aserciones**: Usamos las aserciones incluidas en Vitest
+## Entorno de Pruebas
+- Framework de Testing: Vitest
+- Librería de Mocking: vi (incluido en Vitest)
+- Herramienta de Cobertura: c8 (incluido en Vitest)
 
 ## Mejores Prácticas
+1. Cada archivo de prueba se centra en un único módulo
+2. Uso de `beforeEach` y `afterEach` para configuración y limpieza
+3. Mocking completo de dependencias externas
+4. Descripciones claras usando bloques describe/it
+5. Cobertura de casos de error para pruebas robustas
+6. Aislamiento de pruebas unitarias de servicios externos
 
-1. **Aislamiento**: Cada test debe ser independiente
-2. **Limpieza**: Usar `beforeEach` y `afterEach` para setup y cleanup
-3. **Descriptivo**: Nombres claros que describan el comportamiento esperado
-4. **Organización**: Tests agrupados por funcionalidad relacionada
-5. **Manejo de Errores**: Incluir tests para casos de éxito y error
+## Requisitos de Cobertura
+- Umbral mínimo de cobertura: 80%
+- Rutas críticas requieren 100% de cobertura:
+  - Autenticación
+  - Validación de datos
+  - Manejo de errores
 
 ## Mantenimiento
-
-Para mantener la calidad de los tests:
-
-1. Ejecutar tests antes de cada commit
+Para mantener la calidad de las pruebas:
+1. Ejecutar pruebas antes de cada commit
 2. Mantener la cobertura de código alta
-3. Actualizar tests cuando se modifica la funcionalidad
-4. Revisar y refactorizar tests regularmente
+3. Actualizar pruebas cuando se modifica la funcionalidad
+4. Revisar y refactorizar pruebas regularmente
 
 ## Contribución
-
-Al agregar nuevos tests:
-
+Al agregar nuevas pruebas:
 1. Seguir la estructura de directorios existente
-2. Mantener el estilo de código consistente
-3. Documentar casos de prueba complejos
-4. Asegurar que todos los tests pasen antes de hacer commit
+2. Usar nombres descriptivos para las pruebas
+3. Incluir escenarios de éxito y error
+4. Hacer mock de dependencias externas
+5. Actualizar este README cuando se agreguen nuevas categorías de pruebas
