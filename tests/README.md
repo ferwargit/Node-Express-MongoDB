@@ -1,49 +1,95 @@
-# Tests Structure
+# Tests Unitarios para Node-Express-MongoDB
 
-This directory contains all the test files for the Node-Express-MongoDB project. The tests are organized in a way that makes them easy to maintain and extend.
+Este directorio contiene los tests unitarios para la aplicación Node-Express-MongoDB. Los tests están organizados por categorías y utilizan Vitest como framework de testing.
 
-## Directory Structure
+## Estructura de Directorios
 
 ```
 tests/
-├── config/                 # Test configuration files
-│   └── test-setup.js      # MongoDB memory server setup
-├── integration/           # Integration tests
-├── unit/                 # Unit tests
-│   ├── models/          # Tests for models
-│   │   ├── mascotas.model.test.js
-│   │   └── usuarios.model.test.js
-│   └── schemas/         # Tests for schemas
-│       ├── mascotas.schemas.test.js
-│       └── usuarios.schemas.test.js
-└── README.md            # This file
+├── config/                 # Configuración para los tests
+├── unit/                  # Tests unitarios
+│   ├── controllers/       # Tests para los controladores
+│   ├── models/           # Tests para los modelos
+│   └── schemas/          # Tests para los schemas
+└── README.md             # Esta documentación
 ```
 
-## Test Categories
+## Tecnologías Utilizadas
 
-### Unit Tests
-- **Models**: Tests for business logic and database operations
-- **Schemas**: Tests for schema validations and constraints
+- **Vitest**: Framework principal de testing
+- **MongoDB Memory Server**: Base de datos en memoria para tests
+- **Node.js**: Runtime de JavaScript
+- **ES Modules**: Sistema de módulos nativo de JavaScript
 
-### Integration Tests
-- Future integration tests will go here
+## Ejecución de Tests
 
-### Configuration
-- **test-setup.js**: Contains the setup for MongoDB Memory Server and test database connections
-
-## Running Tests
+Para ejecutar los tests, puedes usar los siguientes comandos:
 
 ```bash
-# Run all tests
+# Ejecutar todos los tests una vez
 npm test
 
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
+# Ejecutar tests en modo watch (útil durante desarrollo)
 npm run test:watch
+
+# Ejecutar tests con cobertura
+npm run test:coverage
 ```
 
-## Coverage Report
+## Cobertura de Tests
 
-The project maintains 100% code coverage across all tested files.
+Los tests cubren las siguientes áreas:
+
+- **Controllers**: Lógica de negocio y manejo de requests/responses
+- **Models**: Operaciones de base de datos y lógica de modelos
+- **Schemas**: Validación de datos y estructura de documentos
+
+Actualmente tenemos:
+- 55 tests en total
+- 6 suites de test
+- 100% de cobertura en modelos y schemas
+- Pruebas exhaustivas de validación y manejo de errores
+
+## Convenciones de Testing
+
+1. **Nombrado de archivos**: Los archivos de test deben terminar en `.test.js`
+2. **Estructura de tests**:
+   ```javascript
+   describe('Módulo', () => {
+     beforeEach(() => {
+       // Setup
+     });
+
+     it('should do something', () => {
+       // Test
+     });
+   });
+   ```
+3. **Mocking**: Utilizamos las funciones de mock de Vitest para aislar componentes
+4. **Aserciones**: Usamos las aserciones incluidas en Vitest
+
+## Mejores Prácticas
+
+1. **Aislamiento**: Cada test debe ser independiente
+2. **Limpieza**: Usar `beforeEach` y `afterEach` para setup y cleanup
+3. **Descriptivo**: Nombres claros que describan el comportamiento esperado
+4. **Organización**: Tests agrupados por funcionalidad relacionada
+5. **Manejo de Errores**: Incluir tests para casos de éxito y error
+
+## Mantenimiento
+
+Para mantener la calidad de los tests:
+
+1. Ejecutar tests antes de cada commit
+2. Mantener la cobertura de código alta
+3. Actualizar tests cuando se modifica la funcionalidad
+4. Revisar y refactorizar tests regularmente
+
+## Contribución
+
+Al agregar nuevos tests:
+
+1. Seguir la estructura de directorios existente
+2. Mantener el estilo de código consistente
+3. Documentar casos de prueba complejos
+4. Asegurar que todos los tests pasen antes de hacer commit
