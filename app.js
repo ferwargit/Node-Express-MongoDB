@@ -7,29 +7,53 @@ import dbClient from './config/dbClient.js';
 
 const app = express();
 
+// Middleware para verificar Content-Type
+app.use((req, res, next) => {
+    if (req.method === 'GET') {
+        return next();
+    }
+    if (!req.is('json') && req.headers['content-type'] !== 'application/x-www-form-urlencoded') {
+        return res.status(415).json({ error: 'Tipo de contenido no soportado. Use application/json' });
+    }
+    next();
+});
+
 // Configurar middleware
-try {
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: true }));
-} catch (error) {
-    console.log(error);
-}
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 // Configurar rutas
-try {
-    app.use('/pets', routesMascotas);
-    app.use('/users', routesUsuarios);
-} catch (error) {
-    console.log(error);
-}
+app.use('/api/mascotas', routesMascotas);
+app.use('/api/usuarios', routesUsuarios);
+
+// Manejo de rutas no encontradas
+app.use((req, res, next) => {
+    const knownRoutes = ['/api/mascotas', '/api/usuarios'];
+    const requestedPath = req.path;
+    
+    // Si la ruta base coincide con una ruta conocida pero el método no está permitido
+    if (knownRoutes.some(route => requestedPath.startsWith(route))) {
+        return res.status(405).json({ error: 'Método no permitido' });
+    }
+    
+    // Si la ruta no existe
+    res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
+// Manejo de errores
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Error interno del servidor' });
+});
 
 // Iniciar servidor
-try {
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => console.log('Servidor activo en el puerto: ' + PORT));
-} catch (error) {
-    console.log(error);
-}
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, (err) => {
+    if (err) {
+        throw err;
+    }
+    console.log('Servidor activo en el puerto: ' + PORT);
+});
 
 // Manejo de señales del sistema
 process.on('SIGINT', async () => {
@@ -37,7 +61,9 @@ process.on('SIGINT', async () => {
         await dbClient.cerrarConexion();
         process.exit(0);
     } catch (error) {
-        console.log(error);
+        console.error('Error al cerrar la conexión:', error);
         process.exit(1);
     }
 });
+
+export default app;

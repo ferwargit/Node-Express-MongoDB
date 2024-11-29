@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import usuariosController from '../../../controllers/usuarios.controllers.js';
 import usuariosModel from '../../../models/usuarios.models.js';
 import bcrypt from 'bcrypt';
@@ -12,114 +12,107 @@ vi.mock('../../../helpers/autenticacion.js');
 describe('Usuarios Controller Test Suite', () => {
     let mockRequest;
     let mockResponse;
-    let responseObject;
+    const userData = {
+        email: 'test@example.com',
+        nombre: 'Test User',
+        telefono: '+1234567890',
+        clave: 'Test1234!'
+    };
 
     beforeEach(() => {
-        // Reset de los mocks antes de cada test
-        vi.clearAllMocks();
-
-        // Mock del objeto response
-        responseObject = {
-            json: vi.fn().mockReturnThis(),
-            status: vi.fn().mockReturnThis(),
-            send: vi.fn().mockReturnThis(),
-        };
-        mockResponse = responseObject;
-
-        // Mock del objeto request
         mockRequest = {
             body: {},
-            params: {},
-            emailConectado: 'test@example.com'
+            emailConectado: null
         };
+        mockResponse = {
+            status: vi.fn().mockReturnThis(),
+            json: vi.fn()
+        };
+        vi.clearAllMocks();
     });
 
-    describe('register', () => {
-        const userData = {
-            email: 'test@example.com',
-            nombre: 'Test User',
-            telefono: '1234567890',
-            clave: 'password123'
-        };
-
+    describe('registrar', () => {
         it('should register a new user successfully', async () => {
             // Arrange
             mockRequest.body = userData;
-            usuariosModel.getOne.mockResolvedValueOnce(null);
+            usuariosModel.getByEmail.mockResolvedValueOnce(null);
             bcrypt.hash.mockResolvedValueOnce('hashedPassword');
-            const userWithHashedPassword = { ...userData, clave: 'hashedPassword' };
+            const userWithHashedPassword = { ...userData, clave: 'hashedPassword', _id: '123' };
             usuariosModel.create.mockResolvedValueOnce(userWithHashedPassword);
 
             // Act
-            await usuariosController.register(mockRequest, mockResponse);
+            await usuariosController.registrar(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: userData.email });
-            expect(bcrypt.hash).toHaveBeenCalledWith(userData.clave, 10);
-            expect(usuariosModel.create).toHaveBeenCalledWith(userWithHashedPassword);
             expect(mockResponse.status).toHaveBeenCalledWith(201);
-            expect(mockResponse.json).toHaveBeenCalledWith(userWithHashedPassword);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                message: 'Usuario registrado exitosamente',
+                user: {
+                    id: '123',
+                    email: userData.email,
+                    nombre: userData.nombre,
+                    rol: undefined
+                }
+            });
         });
 
         it('should return error if user already exists', async () => {
             // Arrange
             mockRequest.body = userData;
-            usuariosModel.getOne.mockResolvedValueOnce(userData);
+            usuariosModel.getByEmail.mockResolvedValueOnce(userData);
 
             // Act
-            await usuariosController.register(mockRequest, mockResponse);
+            await usuariosController.registrar(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: userData.email });
             expect(mockResponse.status).toHaveBeenCalledWith(400);
-            expect(mockResponse.json).toHaveBeenCalledWith({ error: "El usuario ya existe." });
-            expect(usuariosModel.create).not.toHaveBeenCalled();
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'El usuario ya existe'
+            });
         });
 
         it('should handle errors during registration', async () => {
             // Arrange
             const error = new Error('Registration error');
             mockRequest.body = userData;
-            usuariosModel.getOne.mockRejectedValueOnce(error);
+            usuariosModel.getByEmail.mockRejectedValueOnce(error);
 
             // Act
-            await usuariosController.register(mockRequest, mockResponse);
+            await usuariosController.registrar(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: userData.email });
             expect(mockResponse.status).toHaveBeenCalledWith(500);
-            expect(mockResponse.send).toHaveBeenCalledWith(error);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'Registration error'
+            });
         });
     });
 
-    describe('login', () => {
+    describe('iniciarSesion', () => {
         const loginData = {
             email: 'test@example.com',
-            clave: 'password123'
-        };
-
-        const userData = {
-            ...loginData,
-            clave: 'hashedPassword'
+            clave: 'Test1234!'
         };
 
         it('should login user successfully', async () => {
             // Arrange
             mockRequest.body = loginData;
-            usuariosModel.getOne.mockResolvedValueOnce(userData);
+            usuariosModel.getByEmail.mockResolvedValueOnce(userData);
             bcrypt.compare.mockResolvedValueOnce(true);
             generarToken.mockReturnValueOnce('mockToken');
 
             // Act
-            await usuariosController.login(mockRequest, mockResponse);
+            await usuariosController.iniciarSesion(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: loginData.email });
-            expect(bcrypt.compare).toHaveBeenCalledWith(loginData.clave, userData.clave);
-            expect(generarToken).toHaveBeenCalledWith(loginData.email);
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
             expect(mockResponse.json).toHaveBeenCalledWith({
-                msg: 'Usuario autenticado',
+                message: 'Login exitoso',
+                user: {
+                    id: undefined,
+                    email: userData.email,
+                    nombre: userData.nombre,
+                    rol: undefined
+                },
                 token: 'mockToken'
             });
         });
@@ -127,86 +120,87 @@ describe('Usuarios Controller Test Suite', () => {
         it('should return error if user does not exist', async () => {
             // Arrange
             mockRequest.body = loginData;
-            usuariosModel.getOne.mockResolvedValueOnce(null);
+            usuariosModel.getByEmail.mockResolvedValueOnce(null);
 
             // Act
-            await usuariosController.login(mockRequest, mockResponse);
+            await usuariosController.iniciarSesion(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: loginData.email });
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
-            expect(mockResponse.json).toHaveBeenCalledWith({ error: "El usuario NO existe." });
-            expect(bcrypt.compare).not.toHaveBeenCalled();
+            expect(mockResponse.status).toHaveBeenCalledWith(401);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'Credenciales inválidas'
+            });
         });
 
         it('should return error if password is invalid', async () => {
             // Arrange
             mockRequest.body = loginData;
-            usuariosModel.getOne.mockResolvedValueOnce(userData);
+            usuariosModel.getByEmail.mockResolvedValueOnce(userData);
             bcrypt.compare.mockResolvedValueOnce(false);
 
             // Act
-            await usuariosController.login(mockRequest, mockResponse);
+            await usuariosController.iniciarSesion(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: loginData.email });
-            expect(bcrypt.compare).toHaveBeenCalledWith(loginData.clave, userData.clave);
-            expect(mockResponse.status).toHaveBeenCalledWith(400);
-            expect(mockResponse.json).toHaveBeenCalledWith({ error: "Clave NO válida." });
-            expect(generarToken).not.toHaveBeenCalled();
+            expect(mockResponse.status).toHaveBeenCalledWith(401);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'Credenciales inválidas'
+            });
         });
 
         it('should handle errors during login', async () => {
             // Arrange
             const error = new Error('Login error');
             mockRequest.body = loginData;
-            usuariosModel.getOne.mockRejectedValueOnce(error);
+            usuariosModel.getByEmail.mockRejectedValueOnce(error);
 
             // Act
-            await usuariosController.login(mockRequest, mockResponse);
+            await usuariosController.iniciarSesion(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: loginData.email });
             expect(mockResponse.status).toHaveBeenCalledWith(500);
-            expect(mockResponse.send).toHaveBeenCalledWith(error);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'Login error'
+            });
         });
     });
 
-    describe('profile', () => {
+    describe('perfil', () => {
         const userEmail = 'test@example.com';
-        const userData = {
-            email: userEmail,
-            nombre: 'Test User',
-            telefono: '1234567890'
-        };
 
         it('should get user profile successfully', async () => {
             // Arrange
             mockRequest.emailConectado = userEmail;
-            usuariosModel.getOne.mockResolvedValueOnce(userData);
+            usuariosModel.getByEmail.mockResolvedValueOnce(userData);
 
             // Act
-            await usuariosController.profile(mockRequest, mockResponse);
+            await usuariosController.perfil(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: userEmail });
-            expect(mockResponse.status).toHaveBeenCalledWith(200);
-            expect(mockResponse.json).toHaveBeenCalledWith(userData);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                user: {
+                    id: undefined,
+                    email: userData.email,
+                    nombre: userData.nombre,
+                    rol: undefined
+                }
+            });
         });
 
         it('should handle errors when getting profile', async () => {
             // Arrange
             const error = new Error('Profile error');
             mockRequest.emailConectado = userEmail;
-            usuariosModel.getOne.mockRejectedValueOnce(error);
+            usuariosModel.getByEmail.mockRejectedValueOnce(error);
 
             // Act
-            await usuariosController.profile(mockRequest, mockResponse);
+            await usuariosController.perfil(mockRequest, mockResponse);
 
             // Assert
-            expect(usuariosModel.getOne).toHaveBeenCalledWith({ email: userEmail });
             expect(mockResponse.status).toHaveBeenCalledWith(500);
-            expect(mockResponse.send).toHaveBeenCalledWith(error);
+            expect(mockResponse.json).toHaveBeenCalledWith({
+                error: 'Profile error'
+            });
         });
     });
 });

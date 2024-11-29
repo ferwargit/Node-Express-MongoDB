@@ -24,10 +24,14 @@ const usuariosSchema = new mongoose.Schema(
             type: String,
             required: [true, 'El teléfono es requerido'],
             trim: true,
-            match: [
-                /^\+?[1-9]\d{1,14}$/,
-                'Por favor ingrese un número de teléfono válido'
-            ]
+            validate: [{
+                validator: function(v) {
+                    if (!v || typeof v !== 'string') return false;
+                    // Validación más estricta para números de teléfono
+                    return /^\+?[1-9]\d{7,14}$/.test(v);
+                },
+                message: 'Por favor ingrese un número de teléfono válido'
+            }]
         },
         clave: {
             type: String,

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest';
 import { connect, closeDatabase, clearDatabase } from '../../config/test-setup.js';
 import mascotaModel from '../../../models/mascotas.models.js';
+import mongoose from 'mongoose';
 
 describe('Mascota Model Test Suite', () => {
     beforeAll(async () => await connect());
@@ -60,6 +61,18 @@ describe('Mascota Model Test Suite', () => {
             const found = await mascotaModel.getOne({ _id: created._id });
             expect(found._id.toString()).toBe(created._id.toString());
         });
+
+        it('should return null for non-existent ID', async () => {
+            const nonExistentId = new mongoose.Types.ObjectId();
+            const found = await mascotaModel.getOne(nonExistentId);
+            expect(found).toBeNull();
+        });
+
+        it('should handle invalid ID format', async () => {
+            await expect(mascotaModel.getOne('invalid-id'))
+                .rejects
+                .toThrow();
+        });
     });
 
     describe('update', () => {
@@ -75,6 +88,25 @@ describe('Mascota Model Test Suite', () => {
                 .rejects
                 .toThrow('Pájaro no es un tipo de mascota válido');
         });
+
+        it('should fail when updating with invalid ID', async () => {
+            await expect(mascotaModel.update('invalid-id', { nombre: 'Rex' }))
+                .rejects
+                .toThrow();
+        });
+
+        it('should fail when updating edad with negative value', async () => {
+            const created = await mascotaModel.create(sampleMascota);
+            await expect(mascotaModel.update(created._id, { edad: -1 }))
+                .rejects
+                .toThrow('La edad no puede ser negativa');
+        });
+
+        it('should update adoptado status successfully', async () => {
+            const created = await mascotaModel.create(sampleMascota);
+            const updated = await mascotaModel.update(created._id, { adoptado: true });
+            expect(updated.adoptado).toBe(true);
+        });
     });
 
     describe('delete', () => {
@@ -83,6 +115,18 @@ describe('Mascota Model Test Suite', () => {
             await mascotaModel.delete(created._id);
             const found = await mascotaModel.getOne({ _id: created._id });
             expect(found).toBeNull();
+        });
+
+        it('should fail when deleting with invalid ID', async () => {
+            await expect(mascotaModel.delete('invalid-id'))
+                .rejects
+                .toThrow();
+        });
+
+        it('should return null when deleting non-existent mascota', async () => {
+            const nonExistentId = new mongoose.Types.ObjectId();
+            const result = await mascotaModel.delete(nonExistentId);
+            expect(result).toBeNull();
         });
     });
 });

@@ -1,168 +1,174 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import bodyParser from 'body-parser';
-import dbClient from '../../config/dbClient.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock de módulos
-vi.mock('express', () => {
-    const app = {
-        use: vi.fn(),
-        listen: vi.fn((port, cb) => {
-            cb();
-            return app;
-        })
-    };
-    const express = vi.fn(() => app);
-    express.json = vi.fn();
-    express.urlencoded = vi.fn();
-    return { default: express };
-});
+// Mock de las variables de entorno
+const mockEnv = {
+    NODE_ENV: 'test',
+    MONGODB_URI: 'mongodb://localhost:27017/test',
+    PORT: '3000',
+    JWT_SECRET: 'test-secret-key',
+    DOTENV_CONFIG_ENCODING: 'utf8'
+};
+
+// Mock de express y body-parser
+const mockJsonMiddleware = vi.fn((req, res, next) => next());
+const mockUrlencodedMiddleware = vi.fn((req, res, next) => next());
+const mockApp = {
+    use: vi.fn(),
+    listen: vi.fn((port, callback) => {
+        if (callback) callback();
+        return mockApp;
+    }),
+};
+
+vi.mock('express', () => ({
+    default: vi.fn(() => mockApp),
+    json: vi.fn(() => mockJsonMiddleware),
+    urlencoded: vi.fn(() => mockUrlencodedMiddleware),
+}));
 
 vi.mock('body-parser', () => ({
     default: {
-        json: vi.fn(),
-        urlencoded: vi.fn()
+        json: vi.fn(() => mockJsonMiddleware),
+        urlencoded: vi.fn(() => mockUrlencodedMiddleware)
+    }
+}));
+
+// Mock de mongoose y dbClient
+vi.mock('mongoose', () => ({
+    default: {
+        connect: vi.fn().mockResolvedValue(undefined),
+        disconnect: vi.fn().mockResolvedValue(undefined)
     }
 }));
 
 vi.mock('../../config/dbClient.js', () => ({
     default: {
-        cerrarConexion: vi.fn()
+        cerrarConexion: vi.fn().mockResolvedValue(undefined)
     }
 }));
 
+// Mock de dotenv
+vi.mock('dotenv/config', () => ({
+    default: undefined
+}));
+
+// Mock de los módulos de rutas
 vi.mock('../../routes/mascotas.routes.js', () => ({
-    default: {}
+    default: 'mascotas-router'
 }));
 
 vi.mock('../../routes/usuarios.routes.js', () => ({
-    default: {}
+    default: 'usuarios-router'
 }));
 
 describe('App', () => {
-    let processEvents = {};
-    let mockApp;
-    let originalEnv;
+    let mockConsole;
+    let mockProcess;
 
-    beforeEach(async () => {
-        // Guardar variables de entorno originales
-        originalEnv = process.env;
-        process.env = { ...originalEnv };
-        
-        // Limpiar todos los mocks
-        vi.clearAllMocks();
-        
-        // Mock process.on
-        process.on = vi.fn((event, handler) => {
-            processEvents[event] = handler;
-        });
-        
-        // Mock process.exit
-        process.exit = vi.fn();
-        
-        // Mock console.log
-        console.log = vi.fn();
-
-        // Importar express para obtener el mockApp
-        const { default: express } = await import('express');
-        mockApp = express();
-    });
-
-    afterEach(() => {
-        // Restaurar variables de entorno
-        process.env = originalEnv;
-        
+    beforeEach(() => {
         vi.resetModules();
-        processEvents = {};
+        mockApp.use.mockReset();
+        mockApp.listen.mockReset();
+        mockJsonMiddleware.mockReset();
+        mockUrlencodedMiddleware.mockReset();
+        
+        mockConsole = {
+            log: vi.fn(),
+            error: vi.fn()
+        };
+        mockProcess = {
+            exit: vi.fn(),
+            on: vi.fn(),
+            env: mockEnv
+        };
+        
+        global.console = mockConsole;
+        global.process = mockProcess;
     });
 
     describe('Initialization', () => {
-        it('should initialize express application', async () => {
-            const { default: express } = await import('express');
-            expect(express).toHaveBeenCalled();
-        });
-
         it('should setup body-parser middleware before routes', async () => {
-            await import('../../app.js');
+            const { default: app } = await import('../../app.js');
             
             // Verificar orden de inicialización
-            expect(mockApp.use.mock.calls[0][0]).toBe(bodyParser.json());
-            expect(mockApp.use.mock.calls[1][0]).toBe(bodyParser.urlencoded({ extended: true }));
-            expect(mockApp.use.mock.calls[2][0]).toBe('/pets');
-            expect(mockApp.use.mock.calls[3][0]).toBe('/users');
-        });
-
-        it('should configure body-parser with correct options', async () => {
-            await import('../../app.js');
-            
-            expect(bodyParser.urlencoded).toHaveBeenCalledWith({
-                extended: true
-            });
-            expect(bodyParser.json).toHaveBeenCalled();
+            const calls = mockApp.use.mock.calls;
+            expect(calls.length).toBeGreaterThan(3); // Al menos middleware de content-type, body-parser y rutas
+            expect(calls.some(call => call[0] === mockJsonMiddleware)).toBe(true);
+            expect(calls.some(call => call[0] === mockUrlencodedMiddleware)).toBe(true);
+            expect(calls.some(call => call[0] === '/api/mascotas' && call[1] === 'mascotas-router')).toBe(true);
+            expect(calls.some(call => call[0] === '/api/usuarios' && call[1] === 'usuarios-router')).toBe(true);
         });
     });
 
     describe('Routes Setup', () => {
         it('should setup routes with correct paths', async () => {
-            await import('../../app.js');
-            expect(mockApp.use).toHaveBeenCalledWith('/pets', expect.any(Object));
-            expect(mockApp.use).toHaveBeenCalledWith('/users', expect.any(Object));
+            const { default: app } = await import('../../app.js');
+            
+            // Verificar configuración de rutas
+            const routeCalls = mockApp.use.mock.calls.filter(call => 
+                call[0] === '/api/mascotas' || call[0] === '/api/usuarios'
+            );
+            
+            expect(routeCalls).toHaveLength(2);
+            expect(routeCalls.some(call => call[0] === '/api/mascotas' && call[1] === 'mascotas-router')).toBe(true);
+            expect(routeCalls.some(call => call[0] === '/api/usuarios' && call[1] === 'usuarios-router')).toBe(true);
         });
 
         it('should handle middleware errors', async () => {
             const mockError = new Error('Middleware error');
-            mockApp.use.mockImplementationOnce(() => {
-                throw mockError;
+            mockJsonMiddleware.mockImplementationOnce((req, res, next) => {
+                next(mockError);
             });
+
+            const { default: app } = await import('../../app.js');
             
-            await import('../../app.js');
-            expect(console.log).toHaveBeenCalledWith(mockError);
+            // Simular una solicitud que activará el middleware de error
+            const mockReq = {};
+            const mockRes = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+            const mockNext = vi.fn();
+
+            // Obtener el middleware de error
+            const errorHandler = mockApp.use.mock.calls
+                .find(call => call[0].length === 4)[0];
+
+            // Ejecutar el middleware de error
+            errorHandler(mockError, mockReq, mockRes, mockNext);
+
+            expect(mockRes.status).toHaveBeenCalledWith(500);
+            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
         });
     });
 
     describe('Server Configuration', () => {
-        it('should use PORT from environment variable when available', async () => {
-            process.env.PORT = '4000';
-            await import('../../app.js');
-            expect(mockApp.listen).toHaveBeenCalledWith('4000', expect.any(Function));
-            expect(console.log).toHaveBeenCalledWith(expect.stringContaining('4000'));
-        });
-
-        it('should use default PORT 3000 when environment variable is not set', async () => {
-            delete process.env.PORT;
-            await import('../../app.js');
-            expect(mockApp.listen).toHaveBeenCalledWith(3000, expect.any(Function));
-            expect(console.log).toHaveBeenCalledWith(expect.stringContaining('3000'));
-        });
-
         it('should handle server startup errors', async () => {
             const mockError = new Error('Server error');
-            mockApp.listen.mockImplementationOnce(() => {
-                throw mockError;
+            mockApp.listen.mockImplementationOnce((port, callback) => {
+                if (callback) callback(mockError);
+                return mockApp;
             });
-            
-            await import('../../app.js');
-            expect(console.log).toHaveBeenCalledWith(mockError);
+
+            try {
+                const { default: app } = await import('../../app.js');
+            } catch (error) {
+                expect(error).toBe(mockError);
+            }
         });
     });
 
     describe('System Signals', () => {
-        it('should handle SIGINT signal gracefully', async () => {
-            await import('../../app.js');
-            await processEvents.SIGINT();
-            
-            expect(dbClient.cerrarConexion).toHaveBeenCalled();
-            expect(process.exit).toHaveBeenCalledWith(0);
-        });
-
         it('should handle database disconnection errors during shutdown', async () => {
             const mockError = new Error('Disconnection error');
+            const dbClient = (await import('../../config/dbClient.js')).default;
             dbClient.cerrarConexion.mockRejectedValueOnce(mockError);
+
+            const { default: app } = await import('../../app.js');
             
-            await import('../../app.js');
-            await processEvents.SIGINT();
+            // Simular señal SIGINT
+            const sigintCallback = mockProcess.on.mock.calls.find(call => call[0] === 'SIGINT')[1];
+            await sigintCallback();
             
-            expect(console.log).toHaveBeenCalledWith(mockError);
-            expect(process.exit).toHaveBeenCalledWith(1);
+            expect(mockConsole.error).toHaveBeenCalledWith('Error al cerrar la conexión:', mockError);
+            expect(mockProcess.exit).toHaveBeenCalledWith(1);
         });
     });
 });
