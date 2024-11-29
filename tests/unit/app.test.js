@@ -171,4 +171,154 @@ describe('App', () => {
             expect(mockProcess.exit).toHaveBeenCalledWith(1);
         });
     });
+
+    describe('Content Type Middleware', () => {
+        let mockReq;
+        let mockRes;
+        let mockNext;
+
+        beforeEach(() => {
+            mockReq = {
+                method: 'POST',
+                is: vi.fn(),
+                headers: {}
+            };
+            mockRes = {
+                status: vi.fn().mockReturnThis(),
+                json: vi.fn()
+            };
+            mockNext = vi.fn();
+        });
+
+        it('should allow GET requests without content type check', async () => {
+            const { default: app } = await import('../../app.js');
+            mockReq.method = 'GET';
+            
+            // Get content type middleware
+            const contentTypeMiddleware = mockApp.use.mock.calls
+                .find(call => typeof call[0] === 'function' && call[0].length === 3)[0];
+            
+            contentTypeMiddleware(mockReq, mockRes, mockNext);
+            expect(mockNext).toHaveBeenCalled();
+            expect(mockRes.status).not.toHaveBeenCalled();
+        });
+
+        it('should reject requests with unsupported content type', async () => {
+            const { default: app } = await import('../../app.js');
+            mockReq.is = vi.fn(() => false);
+            mockReq.headers['content-type'] = 'text/plain';
+            
+            // Get content type middleware
+            const contentTypeMiddleware = mockApp.use.mock.calls
+                .find(call => typeof call[0] === 'function' && call[0].length === 3)[0];
+            
+            contentTypeMiddleware(mockReq, mockRes, mockNext);
+            expect(mockRes.status).toHaveBeenCalledWith(415);
+            expect(mockRes.json).toHaveBeenCalledWith({ 
+                error: 'Tipo de contenido no soportado. Use application/json' 
+            });
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should allow requests with application/json content type', async () => {
+            const { default: app } = await import('../../app.js');
+            mockReq.is = vi.fn(type => type === 'json');
+            mockReq.headers['content-type'] = 'application/json';
+            
+            // Get content type middleware
+            const contentTypeMiddleware = mockApp.use.mock.calls
+                .find(call => typeof call[0] === 'function' && call[0].length === 3)[0];
+            
+            contentTypeMiddleware(mockReq, mockRes, mockNext);
+            expect(mockNext).toHaveBeenCalled();
+            expect(mockRes.status).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('404 and 405 Error Routes', () => {
+        let mockReq;
+        let mockRes;
+        let mockNext;
+
+        beforeEach(() => {
+            mockReq = {
+                path: '/unknown/route',
+                method: 'GET'
+            };
+            mockRes = {
+                status: vi.fn().mockReturnThis(),
+                json: vi.fn()
+            };
+            mockNext = vi.fn();
+        });
+
+        it('should return 404 for unknown routes', async () => {
+            const { default: app } = await import('../../app.js');
+            mockReq.path = '/api/unknown';
+            
+            // Get 404 middleware
+            const notFoundMiddleware = mockApp.use.mock.calls
+                .find(call => typeof call[0] === 'function' && 
+                    call[0].toString().includes('knownRoutes'))[0];
+            
+            notFoundMiddleware(mockReq, mockRes, mockNext);
+            expect(mockRes.status).toHaveBeenCalledWith(404);
+            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Ruta no encontrada' });
+        });
+
+        it('should return 405 for known routes with invalid methods', async () => {
+            const { default: app } = await import('../../app.js');
+            mockReq.path = '/api/mascotas/invalid-method';
+            mockReq.method = 'INVALID';
+            
+            // Get 404 middleware
+            const notFoundMiddleware = mockApp.use.mock.calls
+                .find(call => typeof call[0] === 'function' && 
+                    call[0].toString().includes('knownRoutes'))[0];
+            
+            notFoundMiddleware(mockReq, mockRes, mockNext);
+            expect(mockRes.status).toHaveBeenCalledWith(405);
+            expect(mockRes.json).toHaveBeenCalledWith({ error: 'Método no permitido' });
+        });
+    });
+
+    describe('Error Handling Middleware', () => {
+        it('should handle validation errors', async () => {
+            const { default: app } = await import('../../app.js');
+            const mockError = { name: 'ValidationError', message: 'Invalid data' };
+            const mockReq = {};
+            const mockRes = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+            const mockNext = vi.fn();
+
+            // Get error handling middleware
+            const errorHandler = mockApp.use.mock.calls
+                .find(call => call[0].length === 4)[0];
+
+            errorHandler(mockError, mockReq, mockRes, mockNext);
+            expect(mockRes.status).toHaveBeenCalledWith(400);
+            expect(mockRes.json).toHaveBeenCalledWith({ 
+                error: 'Error de validación', 
+                message: 'Invalid data' 
+            });
+        });
+
+        it('should handle cast errors', async () => {
+            const { default: app } = await import('../../app.js');
+            const mockError = { name: 'CastError', message: 'Invalid ID' };
+            const mockReq = {};
+            const mockRes = { status: vi.fn().mockReturnThis(), json: vi.fn() };
+            const mockNext = vi.fn();
+
+            // Get error handling middleware
+            const errorHandler = mockApp.use.mock.calls
+                .find(call => call[0].length === 4)[0];
+
+            errorHandler(mockError, mockReq, mockRes, mockNext);
+            expect(mockRes.status).toHaveBeenCalledWith(400);
+            expect(mockRes.json).toHaveBeenCalledWith({ 
+                error: 'ID inválido', 
+                message: 'Invalid ID' 
+            });
+        });
+    });
 });
