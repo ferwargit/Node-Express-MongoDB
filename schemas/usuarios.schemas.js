@@ -15,13 +15,8 @@ const phoneJoiSchema = Joi.string()
 
 // Función de validación de teléfono
 const validatePhone = function(value) {
-    console.log('\n=== Inicio Validación del Teléfono ===');
-    console.log('Valor recibido:', value);
-    
     // Si el valor es null o undefined
     if (value === null || value === undefined) {
-        console.log('Error: Valor null o undefined');
-        console.log('=== Fin Validación del Teléfono con Error ===\n');
         return false;
     }
 
@@ -30,37 +25,26 @@ const validatePhone = function(value) {
         if (typeof value !== 'string') {
             value = String(value);
         }
-        console.log('Tipo:', typeof value);
     } catch (error) {
-        console.log('Error al convertir a string:', error.message);
-        console.log('=== Fin Validación del Teléfono con Error ===\n');
         return false;
     }
 
     // Trim del valor
     value = value.trim();
-    console.log('Valor después de trim:', value);
     
     // Verificar si está vacío después del trim
     if (value === '') {
-        console.log('Error: String vacío después de trim');
-        console.log('=== Fin Validación del Teléfono con Error ===\n');
         return false;
     }
 
     // Validar con Joi
-    console.log('Validando con Joi:', value);
     const schema = Joi.string().pattern(/^(011|11)[ -]?\d{4}[ -]?\d{4}$/);
     const { error } = schema.validate(value);
     
     if (error) {
-        console.log('Error de Joi:', error.message);
-        console.log('=== Fin Validación del Teléfono con Error ===\n');
         return false;
     }
 
-    console.log('Validación exitosa');
-    console.log('=== Fin Validación del Teléfono ===\n');
     return true;
 };
 

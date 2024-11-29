@@ -138,16 +138,15 @@ describe('Usuario Schema Test Suite', () => {
     describe('Phone Validations', () => {
         it('should accept valid phone numbers with different formats', async () => {
             const validPhones = [
-                '011 1234 5678',    // formato estándar con espacios
-                '011-1234-5678',    // formato con guiones
-                '01112345678',      // formato sin separadores
-                '11 1234 5678',     // formato corto con espacios
-                '11-1234-5678',     // formato corto con guiones
-                '1112345678'        // formato corto sin separadores
+                '011 1234 5678',
+                '011-1234-5678',
+                '01112345678',
+                '11 1234 5678',
+                '11-1234-5678',
+                '1112345678'
             ];
 
             for (const phone of validPhones) {
-                console.log(`\nProbando teléfono válido: "${phone}"`);
                 const usuario = new Usuario({ 
                     ...validUsuarioData, 
                     telefono: phone, 
@@ -166,7 +165,6 @@ describe('Usuario Schema Test Suite', () => {
             ];
 
             for (const { value, expectedError } of edgeCases) {
-                console.log(`\nProbando caso borde: "${value}"`);
                 const usuario = new Usuario({ 
                     ...validUsuarioData, 
                     telefono: value, 
@@ -181,49 +179,47 @@ describe('Usuario Schema Test Suite', () => {
 
         it('should reject phone numbers with invalid formats', async () => {
             const invalidFormats = [
-                { value: '1234567890', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '01112 34 56 78', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '011 123 45678', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '011.1234.5678', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '011_1234_5678', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '+54 11 1234 5678', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '(011) 1234-5678', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' }
+                '1234567890',
+                '01112 34 56 78',
+                '011 123 45678',
+                '011.1234.5678',
+                '011_1234_5678',
+                '+54 11 1234 5678',
+                '(011) 1234-5678'
             ];
 
-            for (const { value, expectedError } of invalidFormats) {
-                console.log(`\nProbando formato inválido: "${value}"`);
+            for (const phone of invalidFormats) {
                 const usuario = new Usuario({ 
                     ...validUsuarioData, 
-                    telefono: value, 
+                    telefono: phone, 
                     email: createUniqueEmail() 
                 });
-                
+
                 await expect(usuario.validate())
                     .rejects
-                    .toThrow(expectedError);
+                    .toThrow('usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)');
             }
         });
 
         it('should reject phone numbers with invalid lengths', async () => {
             const invalidLengths = [
-                { value: '011123', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '0111234', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '011123456789', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '11123', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' },
-                { value: '111234567890', expectedError: 'usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)' }
+                '011123',
+                '0111234',
+                '011123456789',
+                '11123',
+                '111234567890'
             ];
 
-            for (const { value, expectedError } of invalidLengths) {
-                console.log(`\nProbando longitud inválida: "${value}"`);
+            for (const phone of invalidLengths) {
                 const usuario = new Usuario({ 
                     ...validUsuarioData, 
-                    telefono: value, 
+                    telefono: phone, 
                     email: createUniqueEmail() 
                 });
-                
+
                 await expect(usuario.validate())
                     .rejects
-                    .toThrow(expectedError);
+                    .toThrow('usuarios validation failed: telefono: Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)');
             }
         });
     });
