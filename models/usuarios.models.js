@@ -15,15 +15,15 @@ class UsuarioModel {
         // Aplicamos las actualizaciones al documento
         Object.assign(doc, usuario);
 
-        // Validamos el documento antes de guardar
-        const validationError = doc.validateSync();
-        if (validationError) {
-            const errorMessage = Object.values(validationError.errors)[0].message;
-            throw new Error(errorMessage);
+        try {
+            // Validamos el documento de forma asíncrona
+            await doc.validate();
+            // Solo guardamos si la validación pasa
+            return await doc.save({ validateBeforeSave: false });
+        } catch (error) {
+            // Propagamos el mensaje de error
+            throw new Error(error.errors?.telefono?.message || error.message);
         }
-
-        // Solo guardamos si la validación pasa
-        return await doc.save({ validateBeforeSave: false });
     }
 
     async delete(id) {

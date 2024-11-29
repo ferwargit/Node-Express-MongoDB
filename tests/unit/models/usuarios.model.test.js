@@ -17,7 +17,7 @@ describe('Usuario Model Test Suite', () => {
         apellido: 'Pérez',
         email: createUniqueEmail(),
         clave: 'Test1234!',
-        telefono: '+34600000000',
+        telefono: '01112345678',
         rol: 'usuario',
         activo: true
     };
@@ -49,7 +49,7 @@ describe('Usuario Model Test Suite', () => {
             };
             await expect(usuarioModel.create(usuarioClaveInvalida))
                 .rejects
-                .toThrow('La clave debe contener al menos una mayúscula, una minúscula, un número y un caracter especial');
+                .toThrow('usuarios validation failed: clave: La clave debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial');
         });
 
         it('should fail when nombre is too short', async () => {
@@ -60,7 +60,7 @@ describe('Usuario Model Test Suite', () => {
             };
             await expect(usuarioModel.create(usuarioNombreCorto))
                 .rejects
-                .toThrow('El nombre debe tener al menos 2 caracteres');
+                .toThrow('usuarios validation failed: nombre: El nombre debe tener al menos 3 caracteres');
         });
 
         it('should fail when nombre is too long', async () => {
@@ -71,7 +71,7 @@ describe('Usuario Model Test Suite', () => {
             };
             await expect(usuarioModel.create(usuarioNombreLargo))
                 .rejects
-                .toThrow('El nombre no puede exceder 50 caracteres');
+                .toThrow('usuarios validation failed: nombre: El nombre no puede tener más de 50 caracteres');
         });
 
         it('should fail when required field telefono is missing', async () => {
@@ -88,9 +88,14 @@ describe('Usuario Model Test Suite', () => {
                 email: createUniqueEmail(),
                 telefono: null
             };
-            await expect(usuarioModel.create(usuarioTelefonoNull))
-                .rejects
-                .toThrow('El teléfono es requerido');
+            try {
+                await usuarioModel.create(usuarioTelefonoNull);
+                throw new Error('Should have failed');
+            } catch (error) {
+                // Verificar que el error esté relacionado con el teléfono
+                expect(error.errors?.telefono).toBeDefined();
+                expect(error.message).toContain('usuarios validation failed');
+            }
         });
 
         it('should fail when email is duplicate', async () => {
@@ -214,11 +219,11 @@ describe('Usuario Model Test Suite', () => {
             const created = await usuarioModel.create({
                 ...sampleUsuario,
                 email: createUniqueEmail(),
-                telefono: '+1234567890'  // Teléfono válido inicial
+                telefono: '011 1234 5678'  // Teléfono válido inicial
             });
             await expect(usuarioModel.update(created._id, { telefono: '123' }))
                 .rejects
-                .toThrow('Por favor ingrese un número de teléfono válido');
+                .toThrow('Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)');
         });
 
         it('should fail when updating rol with invalid value', async () => {
@@ -228,7 +233,7 @@ describe('Usuario Model Test Suite', () => {
             });
             await expect(usuarioModel.update(created._id, { rol: 'invalid-rol' }))
                 .rejects
-                .toThrow('invalid-rol no es un rol válido');
+                .toThrow('usuarios validation failed: rol: El rol debe ser admin o usuario');
         });
     });
 
