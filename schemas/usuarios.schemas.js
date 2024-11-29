@@ -92,8 +92,10 @@ const usuariosSchema = new mongoose.Schema({
         validate: {
             validator: validatePhone,
             message: props => {
-                const error = validatePhone(props.value);
-                return error === true ? '' : 'Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)';
+                if (!props.value || props.value.trim() === '') {
+                    return 'El teléfono es requerido';
+                }
+                return 'Por favor ingrese un número de teléfono válido (ej: 011 1234 5678)';
             }
         }
     },
